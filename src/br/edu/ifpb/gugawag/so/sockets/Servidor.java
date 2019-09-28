@@ -5,11 +5,20 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
-public class Servidor2 {
+public class Servidor {
+
+	//Arquivos em memoria
+    List<String> arquivos = new ArrayList<String>();
+
+	
 
     public static void main(String[] args) throws IOException {
         System.out.println("== Servidor ==");
+        
+        Servidor server = new Servidor();
 
         // Configurando o socket
         ServerSocket serverSocket = new ServerSocket(7001);
@@ -28,8 +37,32 @@ public class Servidor2 {
 
             String mensagem = dis.readUTF();
             System.out.println(mensagem);
+            String[] msgSplitada = mensagem.split(" ");
+            
+            switch (msgSplitada[0]) {
+			case "readdir":
+            	dos.writeUTF("Arquivos:" + server.readdir(msgSplitada[1]));				
+				break;
 
-            dos.writeUTF("Li sua mensagem: " + mensagem);
+			case "rename":
+            	server.rename(msgSplitada[1], msgSplitada[2]);				
+            	dos.writeUTF("");				
+            	break;
+
+			case "create":
+            	server.create(msgSplitada[1]);
+            	dos.writeUTF("");				
+            	break;
+				
+			case "remove":
+            	server.remove(msgSplitada[1]);
+            	dos.writeUTF("");				
+            	break;
+			default:
+				dos.writeUTF("Li sua mensagem: " + mensagem + " mas nenhum comando reconhecido!");
+				break;
+			}    
+            
         }
         /*
          * Observe o while acima. Perceba que primeiro se lê a mensagem vinda do cliente (linha 29, depois se escreve
@@ -37,5 +70,29 @@ public class Servidor2 {
          * pois, de outra forma, daria deadlock (se ambos quiserem ler da entrada ao mesmo tempo, por exemplo,
          * ninguém evoluiria, já que todos estariam aguardando.
          */
+    }
+    
+    public String readdir (String diretorio) {
+    	return this.arquivos.toString();
+    }
+    
+    public void rename (String arquivo, String novoNome) {
+    	for (int i = 0; i < this.arquivos.size(); i++) {
+			if (this.arquivos.get(i).equals(arquivo)) {
+				this.arquivos.set(i, novoNome);
+			}
+		} 
+    }
+    
+    public void create (String nomeArquivo) {
+    	this.arquivos.add(nomeArquivo);
+    }
+    
+    public void remove (String nomeArquivo) {
+    	for (int i = 0; i < this.arquivos.size(); i++) {
+			if (this.arquivos.get(i).equals(nomeArquivo)) {
+				this.arquivos.remove(i);
+			}
+		} 
     }
 }
