@@ -5,16 +5,21 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Servidor {
 
-	//Arquivos em memoria
-    List<String> arquivos = new ArrayList<String>();
-
+    
+//    private static String HOME = System.getProperty("user.home");
+    private static String HOME = "/home/rafael/ifpb/progDistribuida/nfs-sockets";
+    private static String currentDirectory = System.getProperty("user.dir");
 	
-
+    
     public static void main(String[] args) throws IOException {
         System.out.println("== Servidor ==");
         
@@ -39,30 +44,48 @@ public class Servidor {
             System.out.println(mensagem);
             String[] msgSplitada = mensagem.split(" ");
             
-            switch (msgSplitada[0]) {
-			case "readdir":
-            	dos.writeUTF("Arquivos:" + server.readdir(msgSplitada[1]));				
-				break;
+            if(msgSplitada.length<2) {
+            	dos.writeUTF("Querendo quebrar o servidor? Favor verificar a sintaxe dos comandos");
+            }else {
+            	switch (msgSplitada[0]) {
+    			case "readdir":
+    				String msg = server.readdir(msgSplitada[1]);
+    				if (msg != null) {
+						dos.writeUTF(msg);					
+    				}else {
+    					dos.writeUTF("Diretorio nao existente!");	
+    				}
+    				break;
 
-			case "rename":
-            	server.rename(msgSplitada[1], msgSplitada[2]);				
-            	dos.writeUTF("");				
-            	break;
+    			case "rename":
+    				if (server.rename(msgSplitada[1], msgSplitada[2])) {
+                    	dos.writeUTF("");					
+    				}else {
+    					dos.writeUTF("Diretorio ou arquivo nao existente!");	
+    				}			
+                	break;
 
-			case "create":
-            	server.create(msgSplitada[1]);
-            	dos.writeUTF("");				
-            	break;
-				
-			case "remove":
-            	server.remove(msgSplitada[1]);
-            	dos.writeUTF("");				
-            	break;
-			default:
-				dos.writeUTF("Li sua mensagem: " + mensagem + " mas nenhum comando reconhecido!");
-				break;
-			}    
-            
+    			case "create":
+    				if (server.create(msgSplitada[1])) {
+						dos.writeUTF("");					
+    				}else {
+    					dos.writeUTF("Arquivo ja existente!");	
+    				}
+                	break;
+    				
+    			case "remove":
+    				if (server.remove(msgSplitada[1])) {
+						dos.writeUTF("");					
+    				}else {
+    					dos.writeUTF("Arquivo nao existente!");	
+    				}		
+                	break;
+    			default:
+    				dos.writeUTF(msgSplitada[0] + " nao eh um comando reconhecido!");
+    				break;
+    			}    	
+            }
+                        
         }
         /*
          * Observe o while acima. Perceba que primeiro se lê a mensagem vinda do cliente (linha 29, depois se escreve
@@ -72,27 +95,57 @@ public class Servidor {
          */
     }
     
-    public String readdir (String diretorio) {
-    	return this.arquivos.toString();
+    public String readdir (String diretorio) throws IOException {
+    	Path p = Paths.get(HOME+diretorio);
+		if(Files.exists(p)) {
+			Stream <Path> list = Files.list(p);
+			return list.map(Path::getFileName)
+					.map(Object::toString)
+                    .collect(Collectors.joining(", ")); 	
+		}else {
+			return null;
+		}
     }
     
-    public void rename (String arquivo, String novoNome) {
-    	for (int i = 0; i < this.arquivos.size(); i++) {
-			if (this.arquivos.get(i).equals(arquivo)) {
-				this.arquivos.set(i, novoNome);
-			}
-		} 
+    public boolean rename (String arquivo, String novoNome) throws IOException {
+    	Path p = Paths.get(HOME+arquivo);
+    	Path p2 = Paths.get(HOME+novoNome);
+		if(Files.exists(p)) {
+			Files.move(p,p2);
+			return true; 	
+		}else {
+			return false;
+		}
     }
     
-    public void create (String nomeArquivo) {
-    	this.arquivos.add(nomeArquivo);
+    public boolean create (String nomeArquivo) throws IOException {
+    	if (nomeArquivo.contains("/")) {
+    		Path p = Paths.get(HOME+nomeArquivo);
+    		if(!Files.exists(p)) {
+    			Files.createFile(p);
+    			return true; 	
+    		}else {
+    			return false;
+    		}	
+    	}else {
+    		Path p = Paths.get(currentDirectory+"/"+nomeArquivo);
+    		if(!Files.exists(p)) {
+    			Files.createFile(p);
+    			return true; 	
+    		}else {
+    			return false;
+    		}	
+    	}
+    	
     }
     
-    public void remove (String nomeArquivo) {
-    	for (int i = 0; i < this.arquivos.size(); i++) {
-			if (this.arquivos.get(i).equals(nomeArquivo)) {
-				this.arquivos.remove(i);
-			}
+    public boolean remove (String nomeArquivo) throws IOException {
+    	Path p = Paths.get(HOME+nomeArquivo);
+    	if(Files.exists(p)) {
+			Files.delete(p);
+			return true; 	
+		}else {
+			return false;
 		} 
     }
 }
