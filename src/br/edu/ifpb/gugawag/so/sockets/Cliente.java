@@ -26,9 +26,13 @@ public class Cliente {
             // escrevendo para o servidor
             dos.writeUTF(teclado.nextLine());
 
-            // lendo o que o servidor enviou
             String mensagem = dis.readUTF();
-            System.out.println(mensagem);
+            while(mensagem != null) {
+            	System.out.println(mensagem);
+            	mensagem = dis.readUTF(); 	
+            }
+            // lendo o que o servidor enviou
+            
         }
         /*
          * Observe o while acima. Perceba que primeiro se escreve para o servidor (linha 27), depois se lê do canal de

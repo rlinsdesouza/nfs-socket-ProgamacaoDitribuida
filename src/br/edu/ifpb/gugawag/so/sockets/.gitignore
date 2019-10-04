@@ -1,2 +1,7 @@
 /Cliente.class
 /Servidor.class
+/Topico.class
+/ServidorTopicos.class
+/Publisher.class
+/TratadorCliente.class
+/Repositorio.class
