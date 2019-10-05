@@ -8,7 +8,7 @@ import java.util.Scanner;
 
 public class Cliente {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         System.out.println("== Cliente ==");
 
         // configurando o socket
@@ -19,20 +19,22 @@ public class Cliente {
         // pegando uma referência do canal de entrada do socket. Ao ler deste canal, está se recebendo os dados
         // enviados pelo servidor
         DataInputStream dis = new DataInputStream(socket.getInputStream());
-
+        
         // laço infinito do cliente
         while (true) {
-            Scanner teclado = new Scanner(System.in);
+            Scanner teclado = new Scanner(System.in); 
+           
             // escrevendo para o servidor
-            dos.writeUTF(teclado.nextLine());
+            dos.writeUTF(teclado.nextLine());//aqui o codigo pausa
 
-            String mensagem = dis.readUTF();
-            while(mensagem != null) {
-            	System.out.println(mensagem);
-            	mensagem = dis.readUTF(); 	
-            }
+            Thread.sleep(2000);
             // lendo o que o servidor enviou
-            
+            int teste = dis.available();
+            while(teste != 0) {
+            	String mensagem = dis.readUTF();
+            	System.out.println(mensagem);
+            	teste = dis.available();
+            }
         }
         /*
          * Observe o while acima. Perceba que primeiro se escreve para o servidor (linha 27), depois se lê do canal de

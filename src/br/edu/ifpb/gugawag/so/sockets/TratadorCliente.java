@@ -22,8 +22,7 @@ public class TratadorCliente extends Thread {
             try { 
             	DataInputStream entrada = null;
                 entrada = new DataInputStream(cliente.getInputStream());
-                String mensagem = entrada.readUTF();
-                System.out.println(mensagem);
+                String mensagem = entrada.readUTF(); //aqui o codigo pausa
                 System.out.println("o cliente falou " + mensagem);
                 
                 DataOutputStream saida = null;
