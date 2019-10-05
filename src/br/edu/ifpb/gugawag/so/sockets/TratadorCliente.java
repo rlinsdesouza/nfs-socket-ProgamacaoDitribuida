@@ -9,11 +9,9 @@ import java.util.List;
 public class TratadorCliente extends Thread {
 
     private Socket cliente;
-    private Repositorio repos;
     
     public TratadorCliente(Socket cliente) {
         this.cliente = cliente;
-        this.repos = new Repositorio();
     }
 
     public void run() {
@@ -23,7 +21,7 @@ public class TratadorCliente extends Thread {
             	DataInputStream entrada = null;
                 entrada = new DataInputStream(cliente.getInputStream());
                 String mensagem = entrada.readUTF(); //aqui o codigo pausa
-                System.out.println("o cliente falou " + mensagem);
+                System.out.println("o cliente"+ this.cliente.getInetAddress() + "/" + this.cliente.getPort() + " falou " + mensagem);
                 
                 DataOutputStream saida = null;
                 saida = new DataOutputStream(cliente.getOutputStream());
@@ -32,8 +30,7 @@ public class TratadorCliente extends Thread {
                 
                 String[] msgSplitada = mensagem.split(" ");
                 String comando = msgSplitada[0];
-                String parametro = "";                
-                
+                String[] parametros = mensagem.split("\"");
                 
                 if(msgSplitada.length<2) {
                 	saida = null;
@@ -41,13 +38,9 @@ public class TratadorCliente extends Thread {
                 	saida.writeUTF("Querendo quebrar o servidor? Favor verificar a sintaxe dos comandos");
                 
                 }else {
-                	Topico topico = repos.getTopico(msgSplitada[1]);
-                    for (int i = 1; i < msgSplitada.length; i++) {
-                    	parametro = parametro+msgSplitada[i];
-    				}
                 	switch (comando) {
-        			case "listTopicos":
-        				String topicos = repos.readTopicos();
+        			case "list":
+        				String topicos = Repositorio.readTopicos();
         				if (topicos != null) {
     						saida.writeUTF(topicos);					
         				}else {
@@ -56,26 +49,27 @@ public class TratadorCliente extends Thread {
         				break;
 
         			case "criar":
-        				Topico novo = new Topico(parametro);
-    					saida.writeUTF("Topico criado com sucesso!");					
+        				Topico topico = Repositorio.addTopic(parametros[1]);
+        				topico.addSeguidor(this.cliente);
+        				saida.writeUTF("Topico criado com sucesso!");					
         				break;
 
-        			case "addMensagem":
-        				for (int i = 2; i < msgSplitada.length; i++) {
-                        	parametro = parametro+msgSplitada[i];
-        				}
+        			case "addMsg":
+        				topico = Repositorio.getTopico(parametros[1]);
         				if (topico!=null) {
-        					topico.addMensagens(parametro);
+        					topico.addMensagens(parametros[3]);
         					List<Socket> seguidores = topico.getSeguidores();
-        					for (Socket seguidor : seguidores) {
-        						DataOutputStream saidaToSeguidor = new DataOutputStream(seguidor.getOutputStream());				
-        						saidaToSeguidor.writeUTF(parametro);
+        					if (!seguidores.isEmpty()) {
+        						for (Socket seguidor : seguidores) {
+            						DataOutputStream saidaToSeguidor = new DataOutputStream(seguidor.getOutputStream());				
+            						saidaToSeguidor.writeUTF("O topico: "+ topico.getNome() + " teve a msg '" + parametros[3] + "' adicionada recentemente!");
+            					}	
         					}
-        					saida.writeUTF("Mensagem adicionada com sucesso!");
         				}
     					break;
         				
         			case "seguir":
+        				topico = Repositorio.getTopico(parametros[1]);
         				if (topico != null) {
     						topico.addSeguidor(this.cliente);
     						saida.writeUTF("Seguindo topico: "+topico);

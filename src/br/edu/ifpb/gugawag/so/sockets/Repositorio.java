@@ -3,22 +3,31 @@ package br.edu.ifpb.gugawag.so.sockets;
 import java.util.HashMap;
 
 public class Repositorio {
-	private HashMap<String,Topico> topicos = new HashMap<String,Topico>();
+	private static HashMap<String,Topico> topicos = new HashMap<String,Topico>();
 
-	public HashMap<String, Topico> getTopicos() {
-		return topicos;
+	public static HashMap<String, Topico> getTopicos() {
+		return Repositorio.topicos;
 	}
 
-	public void setTopicos(HashMap<String, Topico> topicos) {
-		this.topicos = topicos;
-	}
-    
-	public String readTopicos () {
-		return this.topicos.keySet().toArray().toString();
+	public static void setTopicos(HashMap<String, Topico> topicos) {
+		Repositorio.topicos = topicos;
 	}
 	
-	public Topico getTopico(String topico) {
-		return this.topicos.get(topico);
+	public static Topico addTopic (String nome) {
+		Topico novo = new Topico (nome);
+		Repositorio.topicos.put(nome, novo);
+		return novo;
+	}
+    
+	public static String readTopicos () {
+		if (Repositorio.topicos.isEmpty()) {
+			return null;
+		}
+		return Repositorio.topicos.keySet().toString();
+	}
+	
+	public static Topico getTopico(String topico) {
+		return Repositorio.topicos.get(topico);
 	}
 
 }
